@@ -43,8 +43,7 @@ jobs:
   #         npm run --prefix phonegap lint
 
   build:
-    needs: lint
-    environment: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
+    environment: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.VITE_DISTRIBUTION }}
     strategy:
