@@ -12,7 +12,7 @@ const pkg = JSON.parse(await fs.readFile('./package.json'));
 const { VITE_DISTRIBUTION } = process.env;
 const BRANCH = process.env.GITHUB_REF && process.env.GITHUB_REF.replace('refs/heads/', '');
 
-if (!['appx', 'appx-dev', 'mac', 'mas', 'mas-dev', 'snap', 'flatpak'].includes(VITE_DISTRIBUTION)) {
+if (!['appx', 'appx-dev', 'mac', 'mas', 'mas-dev', 'snap', 'deb', 'zip', 'flatpak'].includes(VITE_DISTRIBUTION)) {
   throw new Error(`Unsupported distribution: '${VITE_DISTRIBUTION}'`);
 }
 
@@ -42,7 +42,7 @@ export default {
       /HISTORY.md/i,
       /CHANGELOG.md/i,
       '^/(?!electron.js|package.json|lib|dist|resources|node_modules)',
-      ['appx', 'appx-dev', 'snap', 'flatpak'].includes(VITE_DISTRIBUTION) ? '^/resources/(?!64x64.png)' : '^/resources',
+      ['appx', 'appx-dev', 'snap', 'zip', 'deb', 'flatpak'].includes(VITE_DISTRIBUTION) ? '^/resources/(?!64x64.png)' : '^/resources',
       'Makefile',
       '.editorconfig',
       '.gitignore',
@@ -133,98 +133,21 @@ export default {
     ],
   },
   makers: [
-    VITE_DISTRIBUTION === 'appx' && {
-      name: '@electron-forge/maker-appx',
-      config: {
-        packageName: appxPackageName,
-        packageVersion: appxVersion,
-        identityName: process.env.APPX_IDENTITY,
-        publisher: process.env.APPX_PUBLISHER,
-        assets: 'resources/appx',
-        manifest: 'resources/appxmanifest.xml',
-        makePri: true,
-      },
-    },
-    VITE_DISTRIBUTION === 'appx-dev' && {
-      name: '@electron-forge/maker-appx',
-      config: {
-        packageName: appxPackageName,
-        packageVersion: appxVersion,
-        identityName: pkg.name,
-        publisher: process.env.APPX_PUBLISHER_DEV,
-        devCert: 'resources/certificate.pfx',
-        certPass: process.env.CERTIFICATE_SELFSIGN_WIN_PASSWORD,
-        assets: 'resources/appx',
-        manifest: 'resources/appxmanifest.xml',
-        makePri: true,
-      },
-    },
     {
       name: '@electron-forge/maker-zip',
       platforms: [
-        'darwin',
+        'linux',
       ],
     },
     {
-      name: '@electron-forge/maker-dmg',
-      platforms: [
-        'darwin',
-      ],
+    name: '@electron-forge/maker-deb',
       config: {
-        name: pkg.productName,
-        title: `${pkg.productName} ${pkg.version}`,
-        icon: 'resources/icon.icns',
-        background: 'resources/background.tiff',
-        contents: (opts) => {
-          return [{
-            x: 130, y: 220, type: 'file', path: opts.appPath,
-          }, {
-            x: 410, y: 220, type: 'link', path: '/Applications',
-          }];
-        },
-        additionalDMGOptions: {
-          window: {
-            position: {
-              x: 400,
-              y: 100,
-            },
-            size: {
-              width: 540,
-              height: 380,
-            },
-          },
-        },
-      },
-    },
-    {
-      name: '@electron-forge/maker-pkg',
-      platforms: [
-        'mas',
-      ],
-      config: {
-        name: `${pkg.productName}-${pkg.version}${VITE_DISTRIBUTION === 'mas-dev' ? '-dev': ''}`,
-      },
-    },
-    VITE_DISTRIBUTION === 'snap' && {
-      name: './support/snap.cjs',
-      config: {
-        linux: {
+        options: {
+          maintainer: 'rtlabs',
+          homepage: 'https://rtlabs.tech',
           icon: 'resources/icon.icns',
-          executableName: pkg.executableName,
-        },
-        snap: {
-          artifactName: `${pkg.executableName}-${pkg.version}.snap`,
-          summary: pkg.description,
-          category: 'Office;Finance',
-          publish: {
-            provider: 'snapStore',
-            channels: ['edge'],
-          },
-          plugs: ['default', 'u2f-devices'],
-        },
-        protocols,
-        publish: BRANCH === 'master' ? 'always' : 'never',
-      },
+        }
+      }
     },
     VITE_DISTRIBUTION === 'flatpak' && {
       name: '@electron-forge/maker-flatpak',

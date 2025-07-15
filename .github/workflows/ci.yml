@@ -2,11 +2,9 @@ name: CoinSpace CI
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - '**'
-    tags-ignore:
-      - '**'
+
+env:
+  VERSION: v6.14.0
 
 jobs:
   release:
@@ -19,63 +17,30 @@ jobs:
           node-version: 20
       - name: Set app version
         run: echo "VERSION=$(node -p -e "require('./web/package.json').version")" >> $GITHUB_ENV
-      - uses: ncipollo/release-action@v1
-        with:
-          tag: v${{ env.VERSION }}
-          name: v${{ env.VERSION }}
-          draft: true
-          allowUpdates: true
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          omitDraftDuringUpdate: true
-          body: |
-            ### 🌐 Web
 
-            * [Web Wallet](https://coin.space/wallet/)
 
-            ### 📱 Mobile
-
-            <!-- * [App Store](https://apps.apple.com/app/coin-wallet-bitcoin-crypto/id980719434?platform=iphone) (iOS) -->
-            <!-- * [Google Play](https://play.google.com/store/apps/details?id=com.coinspace.app) (Android) -->
-            <!-- * [Galaxy Store](https://galaxystore.samsung.com/detail/com.coinspace.app) (Android) -->
-            <!-- * [Huawei AppGallery](https://appgallery.huawei.com/app/C112183767) (Android) -->
-            <!-- * [Uptodown](https://coin-wallet.en.uptodown.com/android) (Android) -->
-            * [Coin.Wallet.apk](https://github.com/CoinSpace/CoinSpace/releases/download/v${{ env.VERSION }}/Coin.Wallet.apk) (Android)
-
-            ### 🖥️ Desktop
-
-            <!-- * [Microsoft Store](https://www.microsoft.com/store/apps/9NBLGGH5PXJQ) (Windows) -->
-            <!-- * [App Store](https://apps.apple.com/app/coin-wallet-bitcoin-crypto/id980719434?platform=mac) (macOS) -->
-            * [Coin.Wallet.dmg](https://github.com/CoinSpace/CoinSpace/releases/download/v${{ env.VERSION }}/Coin.Wallet.dmg) (macOS)
-            <!-- * [Snap Store](https://snapcraft.io/coin) (Linux) -->
-            * [Flatpak](https://github.com/CoinSpace/CoinSpace/releases/download/v${{ env.VERSION }}/Coin.Wallet.flatpak) (Linux)
-
-            ### 🕵️ Tor
-
-            * [Tor Wallet (.onion)](https://coinspacezp5mmyuicbz2hoafbnduj4vzkttq3grn5mnwdue5t343zid.onion/wallet/)
-
-  lint:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          registry-url: https://npm.pkg.github.com/
-      - env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_READ_TOKEN }}
-        run: |
-          npm --prefix web ci
-          npm --prefix server ci
-          npm --prefix electron ci
-          npm --prefix phonegap ci
-      - run: |
-          npm run --prefix web lint
-          npm run --prefix web lint:style
-          npm run --prefix server lint
-          npm run --prefix server lint:api
-          npm run --prefix electron lint
-          npm run --prefix phonegap lint
+  # lint:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         registry-url: https://npm.pkg.github.com/
+  #     - env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_READ_TOKEN }}
+  #       run: |
+  #         npm --prefix web ci
+  #         npm --prefix server ci
+  #         npm --prefix electron ci
+  #         npm --prefix phonegap ci
+  #     - run: |
+  #         npm run --prefix web lint
+  #         npm run --prefix web lint:style
+  #         npm run --prefix server lint
+  #         npm run --prefix server lint:api
+  #         npm run --prefix electron lint
+  #         npm run --prefix phonegap lint
 
   build:
     needs: lint
@@ -86,97 +51,97 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            node: 20
-            VITE_BUILD_TYPE: electron
-            VITE_PLATFORM: mac
-            VITE_DISTRIBUTION: mac
-            SENTRY_DSN_KEY: SENTRY_DSN_MAC
-            SENTRY_PROJECT: mac
-          - os: macos-14
-            node: 20
-            VITE_BUILD_TYPE: electron
-            VITE_PLATFORM: mac
-            VITE_DISTRIBUTION: mas
-            SENTRY_DSN_KEY: SENTRY_DSN_MAS
-            SENTRY_PROJECT: mas
-          - os: macos-14
-            node: 20
-            VITE_BUILD_TYPE: electron
-            VITE_PLATFORM: mac
-            VITE_DISTRIBUTION: mas-dev
-            SENTRY_DSN_KEY: SENTRY_DSN_MAS
-            SENTRY_PROJECT: mas
+          # - os: macos-14
+          #   node: 20
+          #   VITE_BUILD_TYPE: electron
+          #   VITE_PLATFORM: mac
+          #   VITE_DISTRIBUTION: mac
+          #   SENTRY_DSN_KEY: SENTRY_DSN_MAC
+          #   SENTRY_PROJECT: mac
+          # - os: macos-14
+          #   node: 20
+          #   VITE_BUILD_TYPE: electron
+          #   VITE_PLATFORM: mac
+          #   VITE_DISTRIBUTION: mas
+          #   SENTRY_DSN_KEY: SENTRY_DSN_MAS
+          #   SENTRY_PROJECT: mas
+          # - os: macos-14
+          #   node: 20
+          #   VITE_BUILD_TYPE: electron
+          #   VITE_PLATFORM: mac
+          #   VITE_DISTRIBUTION: mas-dev
+          #   SENTRY_DSN_KEY: SENTRY_DSN_MAS
+          #   SENTRY_PROJECT: mas
           - os: ubuntu-22.04
             node: 20
             VITE_BUILD_TYPE: electron
             VITE_PLATFORM: linux
-            VITE_DISTRIBUTION: snap
+            VITE_DISTRIBUTION: zip
             SENTRY_DSN_KEY: SENTRY_DSN_SNAP
             SENTRY_PROJECT: linux
           - os: ubuntu-22.04
             node: 20
             VITE_BUILD_TYPE: electron
             VITE_PLATFORM: linux
-            VITE_DISTRIBUTION: flatpak
-            SENTRY_DSN_KEY: SENTRY_DSN_SNAP
-            SENTRY_PROJECT: linux
-          - os: windows-2022
-            node: 20
-            VITE_BUILD_TYPE: electron
-            VITE_PLATFORM: win
-            VITE_DISTRIBUTION: appx
-            SENTRY_DSN_KEY: SENTRY_DSN_WIN
-            SENTRY_PROJECT: win
-          - os: windows-2022
-            node: 20
-            VITE_BUILD_TYPE: electron
-            VITE_PLATFORM: win
-            VITE_DISTRIBUTION: appx-dev
-            SENTRY_DSN_KEY: SENTRY_DSN_WIN
-            SENTRY_PROJECT: win
-          - os: macos-15
-            node: 20
-            VITE_BUILD_TYPE: phonegap
-            VITE_PLATFORM: ios
-            VITE_DISTRIBUTION: ios
-            SENTRY_DSN_KEY: SENTRY_DSN_IOS
-            SENTRY_PROJECT: ios
-          - os: ubuntu-22.04
-            node: 20
-            VITE_BUILD_TYPE: phonegap
-            VITE_PLATFORM: android
-            VITE_DISTRIBUTION: android-play
-            SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
-            SENTRY_PROJECT: android
-          - os: ubuntu-22.04
-            node: 20
-            VITE_BUILD_TYPE: phonegap
-            VITE_PLATFORM: android
-            VITE_DISTRIBUTION: android-galaxy
-            SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
-            SENTRY_PROJECT: android
-          - os: ubuntu-22.04
-            node: 20
-            VITE_BUILD_TYPE: phonegap
-            VITE_PLATFORM: android
-            VITE_DISTRIBUTION: android-huawei
-            SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
-            SENTRY_PROJECT: android
-          - os: ubuntu-22.04
-            node: 20
-            VITE_BUILD_TYPE: phonegap
-            VITE_PLATFORM: android
-            VITE_DISTRIBUTION: android-uptodown
-            SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
-            SENTRY_PROJECT: android
-          - os: ubuntu-22.04
-            node: 20
-            VITE_BUILD_TYPE: phonegap
-            VITE_PLATFORM: android
-            VITE_DISTRIBUTION: android-apk
-            SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
-            SENTRY_PROJECT: android
+            VITE_DISTRIBUTION: deb
+            SENTRY_DSN_KEY: SENTRY_DSN_XXXX
+            SENTRY_PROJECT: xxxx
+          # - os: windows-2022
+          #   node: 20
+          #   VITE_BUILD_TYPE: electron
+          #   VITE_PLATFORM: win
+          #   VITE_DISTRIBUTION: appx
+          #   SENTRY_DSN_KEY: SENTRY_DSN_WIN
+          #   SENTRY_PROJECT: win
+          # - os: windows-2022
+          #   node: 20
+          #   VITE_BUILD_TYPE: electron
+          #   VITE_PLATFORM: win
+          #   VITE_DISTRIBUTION: appx-dev
+          #   SENTRY_DSN_KEY: SENTRY_DSN_WIN
+          #   SENTRY_PROJECT: win
+          # - os: macos-15
+          #   node: 20
+          #   VITE_BUILD_TYPE: phonegap
+          #   VITE_PLATFORM: ios
+          #   VITE_DISTRIBUTION: ios
+          #   SENTRY_DSN_KEY: SENTRY_DSN_IOS
+          #   SENTRY_PROJECT: ios
+          # - os: ubuntu-22.04
+          #   node: 20
+          #   VITE_BUILD_TYPE: phonegap
+          #   VITE_PLATFORM: android
+          #   VITE_DISTRIBUTION: android-play
+          #   SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
+          #   SENTRY_PROJECT: android
+          # - os: ubuntu-22.04
+          #   node: 20
+          #   VITE_BUILD_TYPE: phonegap
+          #   VITE_PLATFORM: android
+          #   VITE_DISTRIBUTION: android-galaxy
+          #   SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
+          #   SENTRY_PROJECT: android
+          # - os: ubuntu-22.04
+          #   node: 20
+          #   VITE_BUILD_TYPE: phonegap
+          #   VITE_PLATFORM: android
+          #   VITE_DISTRIBUTION: android-huawei
+          #   SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
+          #   SENTRY_PROJECT: android
+          # - os: ubuntu-22.04
+          #   node: 20
+          #   VITE_BUILD_TYPE: phonegap
+          #   VITE_PLATFORM: android
+          #   VITE_DISTRIBUTION: android-uptodown
+          #   SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
+          #   SENTRY_PROJECT: android
+          # - os: ubuntu-22.04
+          #   node: 20
+          #   VITE_BUILD_TYPE: phonegap
+          #   VITE_PLATFORM: android
+          #   VITE_DISTRIBUTION: android-apk
+          #   SENTRY_DSN_KEY: SENTRY_DSN_ANDROID
+          #   SENTRY_PROJECT: android
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
